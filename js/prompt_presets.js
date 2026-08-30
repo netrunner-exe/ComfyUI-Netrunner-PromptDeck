@@ -3,6 +3,7 @@ import { app } from "../../scripts/app.js";
 const NODE_TYPE = "ComfyUI-Netrunner-PromptDeck";
 const PROPERTY_KEY = "prompt_presets";
 const NO_SELECTION = "";
+const KNOWN_TYPES = ["REF2V", "FL2V", "KREA2"];
 
 function todayISO() {
     const now = new Date();
@@ -12,19 +13,26 @@ function todayISO() {
     return `${year}-${month}-${day}`;
 }
 
-function promptPresetType() {
-    const input = window.prompt(
-        "Preset type — REF2V, FL2V, a custom label, or leave blank for none:",
-        ""
-    );
-    if (input === null) return undefined;
-
+function normalizeType(input) {
     const trimmed = input.trim();
     if (!trimmed) return "";
 
     const upper = trimmed.toUpperCase();
-    if (upper === "REF2V" || upper === "FL2V") return upper;
-    return trimmed;
+    return KNOWN_TYPES.includes(upper) ? upper : trimmed;
+}
+
+function promptPresetType(defaultValue = "") {
+    const input = window.prompt(
+        `Preset type — ${KNOWN_TYPES.join(", ")}, a custom label, or leave blank for none:`,
+        defaultValue
+    );
+    if (input === null) return undefined;
+    return normalizeType(input);
+}
+
+function presetLabel(preset) {
+    const typePart = preset.type ? `${preset.type}: ` : "";
+    return `${preset.date} ${typePart}${preset.name}`;
 }
 
 function getPresets(node) {
@@ -35,11 +43,11 @@ function getPresets(node) {
 }
 
 function findPreset(node, name) {
-    return getPresets(node).find((preset) => preset.name === name);
+    return getPresets(node).find((preset) => presetLabel(preset) === name);
 }
 
 function presetNames(node) {
-    return getPresets(node).map((preset) => preset.name);
+    return getPresets(node).map(presetLabel);
 }
 
 function getTextWidget(node) {
@@ -51,36 +59,78 @@ function savePreset(node, presetSelector) {
     const type = promptPresetType();
     if (type === undefined) return;
 
-    const baseName = window.prompt("Preset name:", "");
-    if (!baseName) return;
+    const name = window.prompt("Preset name:", "");
+    if (!name) return;
 
-    const label = type ? `${type}: ${baseName}` : baseName;
-    const name = `${todayISO()} ${label}`;
-    const presets = getPresets(node);
-    const existing = findPreset(node, name);
+    const preset = { date: todayISO(), type, name, value: textWidget.value };
+    const label = presetLabel(preset);
+    const existing = findPreset(node, label);
 
     if (existing) {
-        const overwrite = window.confirm(`Preset "${name}" already exists. Overwrite?`);
-        if (!overwrite) return;
-        existing.value = textWidget.value;
+        if (!window.confirm(`Preset "${label}" already exists. Overwrite its value?`)) return;
+        existing.value = preset.value;
     } else {
-        presets.push({ name, value: textWidget.value });
+        getPresets(node).push(preset);
     }
 
-    presetSelector.value = name;
+    presetSelector.value = label;
+    node.graph.setDirtyCanvas(true, true);
+}
+
+function updatePresetValue(node, presetSelector) {
+    const label = presetSelector.value;
+    if (!label) {
+        window.alert("Select a preset to update first.");
+        return;
+    }
+
+    const preset = findPreset(node, label);
+    if (!preset) return;
+
+    if (!window.confirm(`Overwrite the stored text of "${label}" with the current prompt? Date and name stay the same.`)) return;
+
+    preset.value = getTextWidget(node).value;
+    node.graph.setDirtyCanvas(true, true);
+}
+
+function renamePreset(node, presetSelector) {
+    const label = presetSelector.value;
+    if (!label) {
+        window.alert("Select a preset to rename first.");
+        return;
+    }
+
+    const preset = findPreset(node, label);
+    if (!preset) return;
+
+    const type = promptPresetType(preset.type);
+    if (type === undefined) return;
+
+    const name = window.prompt("Preset name:", preset.name);
+    if (!name) return;
+
+    const newLabel = presetLabel({ ...preset, type, name });
+    if (newLabel !== label && findPreset(node, newLabel)) {
+        window.alert(`Preset "${newLabel}" already exists.`);
+        return;
+    }
+
+    preset.type = type;
+    preset.name = name;
+    presetSelector.value = newLabel;
     node.graph.setDirtyCanvas(true, true);
 }
 
 function deletePreset(node, presetSelector) {
-    const name = presetSelector.value;
-    if (!name) {
+    const label = presetSelector.value;
+    if (!label) {
         window.alert("Select a preset to delete first.");
         return;
     }
 
-    if (!window.confirm(`Delete preset "${name}"?`)) return;
+    if (!window.confirm(`Delete preset "${label}"?`)) return;
 
-    node.properties[PROPERTY_KEY] = getPresets(node).filter((preset) => preset.name !== name);
+    node.properties[PROPERTY_KEY] = getPresets(node).filter((preset) => presetLabel(preset) !== label);
     presetSelector.value = NO_SELECTION;
     node.graph.setDirtyCanvas(true, true);
 }
@@ -110,6 +160,16 @@ function addPresetWidgets(node) {
         savePreset(node, presetSelector);
     });
     saveButton.serialize = false;
+
+    const updateButton = node.addWidget("button", "Update preset value", null, () => {
+        updatePresetValue(node, presetSelector);
+    });
+    updateButton.serialize = false;
+
+    const renameButton = node.addWidget("button", "Rename preset", null, () => {
+        renamePreset(node, presetSelector);
+    });
+    renameButton.serialize = false;
 
     const deleteButton = node.addWidget("button", "Delete preset", null, () => {
         deletePreset(node, presetSelector);
