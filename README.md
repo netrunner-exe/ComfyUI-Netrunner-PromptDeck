@@ -1,4 +1,4 @@
-# ComfyUI-Netrunner-PromptDeck
+# ComfyUI-PromptDeck
 
 A ComfyUI prompt node with in-workflow preset management: save, tag, and recall prompt text without leaving the node.
 
@@ -15,16 +15,16 @@ A ComfyUI prompt node with in-workflow preset management: save, tag, and recall 
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone <repo-url> ComfyUI-Netrunner-PromptDeck
+git clone <repo-url> ComfyUI-PromptDeck
 ```
 
-Or download and unzip a release into `ComfyUI/custom_nodes/ComfyUI-Netrunner-PromptDeck`.
+Or download and unzip a release into `ComfyUI/custom_nodes/ComfyUI-PromptDeck`.
 
 Restart ComfyUI after installing.
 
 ## Usage
 
-1. Add the **ComfyUI-Netrunner-PromptDeck** node (category: `utils/text`).
+1. Add the **PromptDeck** node (category: `utils/text`).
 2. Type a prompt into the text field.
 3. **Save preset** — stores the current text as a *new* preset dated today. Prompts for type (`REF2V`, `FL2V`, `KREA2`, a custom label, or blank for none) and name.
 4. **Preset** dropdown — loads a saved preset's text into the text field.
@@ -33,8 +33,6 @@ Restart ComfyUI after installing.
 7. **Delete preset** — removes the currently selected preset.
 
 Saving under a type/name combination that already exists *for today's date* asks for confirmation before overwriting; on a different day it creates a new, separately dated entry instead of silently duplicating or overwriting older presets.
-
-Saving under an existing full name (same date, type, and name) asks for confirmation before overwriting.
 
 ## How presets are stored
 

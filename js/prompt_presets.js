@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 
-const NODE_TYPE = "ComfyUI-Netrunner-PromptDeck";
+const NODE_TYPE = "PromptDeck";
 const PROPERTY_KEY = "prompt_presets";
 const NO_SELECTION = "";
 const KNOWN_TYPES = ["REF2V", "FL2V", "KREA2"];
@@ -180,7 +180,7 @@ function addPresetWidgets(node) {
 }
 
 app.registerExtension({
-    name: "custom.NetrunnerPromptDeck",
+    name: "custom.PromptDeck",
     beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
 

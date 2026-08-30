@@ -1,4 +1,4 @@
-class NetrunnerPromptDeck:
+class PromptDeck:
     # Preset storage/UI is handled entirely on the frontend (see js/prompt_presets.js).
     # Backend only sees the resulting "text" string.
     CATEGORY = "utils/text"
@@ -19,9 +19,9 @@ class NetrunnerPromptDeck:
 
 
 NODE_CLASS_MAPPINGS = {
-    "ComfyUI-Netrunner-PromptDeck": NetrunnerPromptDeck,
+    "PromptDeck": PromptDeck,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ComfyUI-Netrunner-PromptDeck": "ComfyUI-Netrunner-PromptDeck",
+    "PromptDeck": "PromptDeck",
 }
