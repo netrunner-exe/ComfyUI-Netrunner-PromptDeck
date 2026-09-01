@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-promptdeck"
+description = "ComfyUI prompt node with in-workflow preset management: save, tag, and recall prompt text without leaving the node."
+version = "0.1.0"
+dependencies = []
+# Add `license = { file = "LICENSE" }` once a LICENSE file is added to the repo.
+
+[project.urls]
+Repository = "https://github.com/<your-username>/ComfyUI-PromptDeck"
+
+[tool.comfy]
+PublisherId = ""  # TODO: fill in from https://registry.comfy.org
+DisplayName = "PromptDeck"
+Icon = ""

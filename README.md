@@ -1,44 +1,43 @@
 # ComfyUI-PromptDeck
 
-A ComfyUI prompt node with in-workflow preset management: save, tag, and recall prompt text without leaving the node.
+A prompt node with built-in preset management — save, tag, rename, and recall prompt text without leaving the node.
 
 ## Features
 
 - Multiline prompt input, single `STRING` output (`string`).
-- Save, update, rename, select, and delete presets directly on the node.
-- Each preset can be tagged by type: `REF2V`, `FL2V`, `KREA2`, a custom label, or no type at all.
-- Preset labels include the save date, e.g. `2026-05-13 REF2V: My_preset` or `2026-05-13 My_preset` (no type).
-- Presets are stored inside the workflow itself (node properties) — no external files, no server-side state.
-- Renaming or updating a preset's stored text does **not** touch its original save date.
+- A dropdown of saved presets, sorted newest first and grouped by type, plus **Save as new** / **Save** / **Rename** / **Delete** buttons.
+- Right-click the dropdown to copy the selected preset's name to the clipboard.
+- Save/Rename open a small dialog for the preset's type and name (only if "Use labels" is on — see Settings):
+  - No configured types → just a **Custom label** text field.
+  - Configured types → a dropdown of those types plus a **Custom label** option, which activates the text field once selected.
+- Right-click the node itself for **Export `<preset name>`** (only when a preset is selected), **Export all**, and **Import presets**. Export uses the browser's native Save-As dialog where available, otherwise a plain download; Import opens the native file picker and warns you before overwriting any existing presets.
 
-## Installation
+## Settings
 
-```bash
-cd ComfyUI/custom_nodes
-git clone <repo-url> ComfyUI-PromptDeck
-```
+Under **PromptDeck** in ComfyUI Settings:
 
-Or download and unzip a release into `ComfyUI/custom_nodes/ComfyUI-PromptDeck`.
-
-Restart ComfyUI after installing.
+- **Custom preset types** — comma-separated list offered in the Save/Rename dialog.
+- **Add date before name** (on) — prefixes each preset's label with its save date, e.g. `2026-05-13 My_preset`. Off drops the date from labels and from the overwrite-collision check.
+- **Use labels** (on) — shows the type field in Save/Rename and includes the type in labels. Off hides that field and presets save without a type.
 
 ## Usage
 
 1. Add the **PromptDeck** node (category: `utils/text`).
 2. Type a prompt into the text field.
-3. **Save preset** — stores the current text as a *new* preset dated today. Prompts for type (`REF2V`, `FL2V`, `KREA2`, a custom label, or blank for none) and name.
-4. **Preset** dropdown — loads a saved preset's text into the text field.
-5. **Update preset value** — overwrites the *stored text* of the currently selected preset with the current text field content. Date, type, and name are left untouched.
-6. **Rename preset** — changes the type and/or name of the currently selected preset. Date and stored text are left untouched; leave a field at its default in the prompt to keep it unchanged.
-7. **Delete preset** — removes the currently selected preset.
+3. **Save as new** — opens the dialog, then stores the current text as a new preset.
+4. Pick a preset from the dropdown — applies its text to the field.
+5. **Save** — overwrites the selected preset's stored text with whatever's currently in the field. Date, type, and name are untouched.
+6. **Rename** — changes the type and/or name of the selected preset. Date and stored text are untouched.
+7. **Delete** — removes the selected preset.
+8. Right-click the node for export/import.
 
-Saving under a type/name combination that already exists *for today's date* asks for confirmation before overwriting; on a different day it creates a new, separately dated entry instead of silently duplicating or overwriting older presets.
+Saving under a type/name that already exists for the same date asks before overwriting; a different date creates a new, separately dated entry instead.
 
 ## How presets are stored
 
-Presets are kept in the node's `properties.prompt_presets` array. ComfyUI/LiteGraph serializes node properties together with the rest of the graph, so presets are saved and loaded along with the workflow (`.json` file or PNG-embedded workflow) — no separate preset storage is used.
+The preset library itself is **not** part of the workflow — it lives in one shared file, `user/default/prompt_deck/global_presets.json`, read and written through ComfyUI's `/userdata` API. Every PromptDeck node, in every workflow, reads and writes the same file, so a preset saved from one workflow shows up in all the others. Concurrent saves are last-write-wins, no merging.
 
-Each entry has the shape `{ date, type, name, value }`. If a workflow was saved with an earlier version of this node that stored presets differently, its presets will need to be re-saved after upgrading.
+Each preset entry has the shape `{ id, date, type, name, value }`.
 
 ## Node reference
 
@@ -47,7 +46,3 @@ Each entry has the shape `{ date, type, name, value }`. If a workflow was saved 
 | Input | `text` — `STRING`, multiline |
 | Output | `string` — `STRING` |
 | Category | `utils/text` |
-
-## Requirements
-
-ComfyUI with support for the frontend extension API (`app.registerExtension`).
